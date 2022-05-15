@@ -2,11 +2,11 @@ package com.github.dedinc.vklisteningbot;
 
 import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.WebElement;
-
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
-
 import com.github.dedinc.vklisteningbot.utils.Downloader;
 import com.github.dedinc.vklisteningbot.utils.SeleniumUtils;
 import com.github.dedinc.vklisteningbot.utils.UserAgents;
@@ -36,7 +36,7 @@ public class Main {
         Option password = new Option("p", "pass", true, "password VK");
         password.setRequired(true);
         options.addOption(password);
-        
+		
         Option link = new Option("link", true, "link of Album/Playlist");
         link.setRequired(true);
         options.addOption(link);
@@ -59,10 +59,17 @@ public class Main {
         
 		System.setProperty("webdriver.chrome.driver", SeleniumUtils.getChromeDriver(false));
 		ChromeOptions coptions = new ChromeOptions();
+		final String[] arguments = {"notifications", "images", "plugins", "popups"};
+		Map<String, Object> pf = new HashMap<String, Object>();
+		for (String arg : arguments) {
+			pf.put("profile.default_content_setting_values." + arg, 2);
+		}
 		coptions.addArguments("--headless");
-		coptions.addArguments("user-agent=" + UserAgents.getAgent());
+		coptions.addArguments("--disable-infobars");
+		coptions.addArguments("--disable-extensions");
+		coptions.addArguments("--user-agent=" + UserAgents.getAgent());
 		coptions.setExperimentalOption("excludeSwitches", Arrays.asList("enable-automation"));
-		coptions.setExperimentalOption("useAutomationExtension", false);
+		coptions.setExperimentalOption("prefs", pf);
 		ChromeDriver driver;
 		try {
 			driver = new ChromeDriver(coptions);
@@ -77,29 +84,37 @@ public class Main {
 		System.out.println("Auth...");
 		driver.get("https://vk.com/login");
 		
-		WebElement email = driver.findElementById("email");
+		WebElement loginButton = driver.findElementByXPath("/html/body/div[10]/div/div/div[2]/div[2]/div[2]/div/div/div/div[3]/button[1]");
+		loginButton.click();
+		WebElement email = driver.findElementByName("login");
+		WebElement nextButton = driver.findElementByXPath("/html/body/div/div/div/div[2]/div/form/div[2]/div[1]/button");
 		email.sendKeys(log);
-		WebElement passElem = driver.findElementById("pass");
+		nextButton.click();
+		try {
+			Thread.sleep(500);
+		   } catch (Exception e) {
+		}
+		WebElement passElem = driver.findElementByName("password");
+		nextButton = driver.findElementByXPath("/html/body/div/div/div/div[2]/div/form/div[2]/button");
 		passElem.sendKeys(pass);
-		WebElement button = driver.findElementById("login_button");
-		button.click();
-		while (!waitElement(driver, "classname", "page_name", 8)) {
+		nextButton.click();
+		while (!waitElement(driver, "xpath", "/html/body/div[11]/div/div/div[2]/div[1]/div/nav/ol/li[7]/a", 8)) {
 			try {
-				driver.findElementByXPath("/html/body/div[10]/div/div/div[2]/div[2]/div[2]/div/div/div/div[1]/div/div/b[1]");
+				driver.findElementByClassName("vkc__TextField__error");
 				System.out.println("Wrong login and pass!");
 				driver.quit();
 				System.exit(1);
 			   } catch (Exception e) {
 			}
 			try {
-				driver.findElementByClassName("captcha");
+				driver.findElementByClassName("vkc__Captcha__image");
 				System.out.println("Captcha detected! Load captcha.png...");
-				Downloader.download(driver.findElementByXPath("/html/body/div[7]/div/div[2]/div/div[2]/div/div[1]/img").getAttribute("src"), Paths.get(System.getProperty("user.dir"), "captcha.png").toString());
+				Downloader.download(driver.findElementByXPath("/html/body/div/div/div[2]/div/form/img").getAttribute("src"), Paths.get(System.getProperty("user.dir"), "captcha.png").toString());
 			    Scanner scanner = new Scanner(System.in);
 			    System.out.println("Loaded!\nEnter a captcha: ");
 			    String captcha = scanner.nextLine();
-			    driver.findElementByXPath("/html/body/div[7]/div/div[2]/div/div[2]/div/div[2]/input").sendKeys(captcha);
-			    driver.findElementByXPath("/html/body/div[7]/div/div[2]/div/div[3]/div[1]/table/tbody/tr/td[2]/button").click();			    
+			    driver.findElementByXPath("/html/body/div/div/div[2]/div/form/div[1]/div/div/input").sendKeys(captcha);
+			    driver.findElementByXPath("/html/body/div/div/div[2]/div/form/div[2]/button").click();			    
 			   } catch (Exception e) {
 			}
 		}
@@ -108,6 +123,7 @@ public class Main {
 		
 		System.out.println("Listening...");
 		int tracks = 0;
+		int listenings = 0;
 		for (int i = 1; i != Integer.MAX_VALUE; i++) {
 			try {
 				driver.findElementByXPath(String.format("/html/body/div[11]/div/div/div[2]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div[2]/div[2]/div/div[%d]/div/div[6]/div[2]", i));
@@ -128,12 +144,27 @@ public class Main {
 			}
 			Actions action = new Actions(driver);
 			WebElement track = driver.findElementByXPath(String.format("/html/body/div[11]/div/div/div[2]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div[2]/div[2]/div/div[%d]/div/button", k));
+			String duration = driver.findElementByXPath(String.format("/html/body/div[11]/div/div/div[2]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div[2]/div[2]/div/div[%d]/div/div[6]/div[3]/div", k)).getText();
+			int listenTime = (Integer.parseInt(duration.split(":")[0]) * 60 + Integer.parseInt(duration.split(":")[1])) / 2;
 			action.moveToElement(track).click().perform();
 			prev = k;
 			try {
-				Thread.sleep(35000);
+				Thread.sleep(listenTime * 1000);
 			   } catch (Exception e) {
 			}
+			if (System.getProperty("os.name").toLowerCase().contains("win")) {
+				try {
+					Runtime.getRuntime().exec("cls");
+				   } catch (Exception e) {
+				}
+			} else {
+				try {
+					Runtime.getRuntime().exec("clear");
+				   } catch (Exception e) {
+				}
+			}
+			listenings += 1;
+			System.out.println("Listenings: " + listenings);
 		}
 	}
 	
