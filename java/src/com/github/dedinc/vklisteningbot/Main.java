@@ -4,6 +4,7 @@ import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.WebElement;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -19,7 +20,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.interactions.Actions;
 
 public class Main {
 	
@@ -121,51 +121,8 @@ public class Main {
 		System.out.println("Logged!");
 		driver.get(albumLink);
 		
-		System.out.println("Listening...");
-		int tracks = 0;
-		int listenings = 0;
-		for (int i = 1; i != Integer.MAX_VALUE; i++) {
-			try {
-				driver.findElementByXPath(String.format("/html/body/div[11]/div/div/div[2]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div[2]/div[2]/div/div[%d]/div/div[6]/div[2]", i));
-				tracks += 1;
-			} catch (Exception e) {
-				break;
-			}
-		}
-		
-		int prev = 0;
-		while (true) {
-			int k = 1;
-			while (true) {
-				k = (int) (Math.random()*tracks);
-				if (k != 0 && k != prev) {
-					break;
-				}
-			}
-			Actions action = new Actions(driver);
-			WebElement track = driver.findElementByXPath(String.format("/html/body/div[11]/div/div/div[2]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div[2]/div[2]/div/div[%d]/div/button", k));
-			String duration = driver.findElementByXPath(String.format("/html/body/div[11]/div/div/div[2]/div[2]/div[2]/div/div/div/div/div/div[2]/div/div[2]/div[2]/div/div[%d]/div/div[6]/div[3]/div", k)).getText();
-			int listenTime = (Integer.parseInt(duration.split(":")[0]) * 60 + Integer.parseInt(duration.split(":")[1])) / 2;
-			action.moveToElement(track).click().perform();
-			prev = k;
-			try {
-				Thread.sleep(listenTime * 1000);
-			   } catch (Exception e) {
-			}
-			if (System.getProperty("os.name").toLowerCase().contains("win")) {
-				try {
-					Runtime.getRuntime().exec("cls");
-				   } catch (Exception e) {
-				}
-			} else {
-				try {
-					Runtime.getRuntime().exec("clear");
-				   } catch (Exception e) {
-				}
-			}
-			listenings += 1;
-			System.out.println("Listenings: " + listenings);
-		}
+		driver.executeScript(new String(Base64.getDecoder().decode("dmFyIGdldHRlZCA9IGZhbHNlOwoKY29uc3Qgc2xlZXAgPSAobWlsbGlzZWNvbmRzKSA9PiB7CiAgcmV0dXJuIG5ldyBQcm9taXNlKHJlc29sdmUgPT4gc2V0VGltZW91dChyZXNvbHZlLCBtaWxsaXNlY29uZHMpKQp9Cgphc3luYyBmdW5jdGlvbiBsaXN0ZW5pbmdCb3QoKSB7CiAgICBhdWRpb3MgPSBkb2N1bWVudC5nZXRFbGVtZW50c0J5Q2xhc3NOYW1lKCdibGluZF9sYWJlbCBfYXVkaW9fcm93X19wbGF5X2J0bicpCiAgICBkdXJhdGlvbnMgPSBkb2N1bWVudC5nZXRFbGVtZW50c0J5Q2xhc3NOYW1lKCdhdWRpb19yb3dfX2R1cmF0aW9uIGF1ZGlvX3Jvd19fZHVyYXRpb24tcyBfYXVkaW9fcm93X19kdXJhdGlvbicpCiAgICBrID0gTWF0aC5yb3VuZChNYXRoLnJhbmRvbSgpICogYXVkaW9zLmxlbmd0aCkKICAgIGlmIChrICE9IDApIHsKICAgICAgICBrIC09IDEKICAgIH0KICAgIGF1ZGlvc1trXS5jbGljaygpCiAgICBkdXJhdGlvbiA9IGR1cmF0aW9uc1trXS50ZXh0Q29udGVudAogICAgaWYgKGF1ZGlvcy5sZW5ndGggPT0gMSAmJiAhZ2V0dGVkKSB7CiAgICAgICAgbGlzdGVuaW5nVGltZSA9IGR1cmF0aW9uLnNwbGl0KCc6JylbMF0gKiA2MCArIGR1cmF0aW9uLnNwbGl0KCc6JylbMV0gKiAxICsgOAogICAgICAgIGdldHRlZCA9IHRydWU7CiAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgbGlzdGVuaW5nVGltZSA9IChkdXJhdGlvbi5zcGxpdCgnOicpWzBdICogNjAgKyBkdXJhdGlvbi5zcGxpdCgnOicpWzFdICogMSkgLyAyCiAgICB9CiAgICBhd2FpdCBzbGVlcChsaXN0ZW5pbmdUaW1lKQp9CgpsaXN0ZW5pbmdCb3QoKTs=")));
+		System.out.println("Listening started!");
 	}
 	
 	public static boolean waitElement(ChromeDriver driver, String type, String arg, int maxTime) {
