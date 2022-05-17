@@ -46,19 +46,21 @@ const sleep = (milliseconds) => {
 async function listeningBot() {
     audios = document.getElementsByClassName('blind_label _audio_row__play_btn')
     durations = document.getElementsByClassName('audio_row__duration audio_row__duration-s _audio_row__duration')
-    k = Math.round(Math.random() * audios.length)
-    if (k != 0) {
-        k -= 1
+    for (let i = 0; i < 9999999999; i++) {
+        k = Math.round(Math.random() * audios.length)
+        if (k != 0) {
+            k -= 1
+        }
+        audios[k].click()
+        duration = durations[k].textContent
+        if (audios.length == 1 && !getted) {
+            listeningTime = duration.split(':')[0] * 60 + duration.split(':')[1] * 1 + 8
+            getted = true;
+        } else {
+                    listeningTime = (duration.split(':')[0] * 60 + duration.split(':')[1] * 1) / 2
+        }
+        await sleep(listeningTime * 1000)
     }
-    audios[k].click()
-    duration = durations[k].textContent
-    if (audios.length == 1 && !getted) {
-        listeningTime = duration.split(':')[0] * 60 + duration.split(':')[1] * 1 + 8
-        getted = true;
-    } else {
-                listeningTime = (duration.split(':')[0] * 60 + duration.split(':')[1] * 1) / 2
-    }
-    await sleep(listeningTime)
 }
 
 listeningBot();
